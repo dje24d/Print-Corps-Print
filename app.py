@@ -518,13 +518,6 @@ def register_routes(app):
             download_name=order.original_filename
         )
 
-
-
-
-
-
-
-
     # Login route (fixed)
     @app.route('/login', methods=['GET', 'POST'])
     def login():
@@ -1772,7 +1765,7 @@ def register_routes(app):
         # Calculate processing time if completed
         processing_time = None
         if order.processing_started_at and order.processing_completed_at:
-            processing_time = order.processing_completed_at - order.processing_started_at
+            processing_time = order.processing_started_at - order.processing_completed_at
         
         return render_template('client_order_detail.html', 
                             order=order,
@@ -1821,8 +1814,8 @@ def register_routes(app):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Create app instance
+# Create app instance - THIS IS CRITICAL FOR GUNICORN
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)

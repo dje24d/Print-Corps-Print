@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}User Dashboard - {{ user.username }} - Print Corps{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">User Dashboard: {{ user.username }}</h1>
+    
+    <!-- User Statistics -->
+    <div class="row mt-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <h5>Total Orders</h5>
+                    <h2>{{ stats.total_orders }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <h5>Pending Orders</h5>
+                    <h2>{{ stats.pending_orders }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <h5>Completed Orders</h5>
+                    <h2>{{ stats.completed_orders }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white mb-4">
+                <div class="card-body">
+                    <h5>Total Spent</h5>
+                    <h2>{{ format_currency(stats.total_spent) }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Recent Orders</h4>
+                </div>
+                <div class="card-body">
+                    {% if stats.recent_orders %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>File</th>
+                                    <th>Status</th>
+                                    <th>Price</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in stats.recent_orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td>{{ order.original_filename|truncate(20) }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if order.status == 'Completed' %}success{% elif order.status == 'Processing' %}warning{% elif order.status == 'Pending' %}secondary{% else %}danger{% endif %}">
+                                            {{ order.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ format_currency(order.price) }}</td>
+                                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center">No orders found for this user.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="row">
+        <div class="col-12">
+            <a href="{{ url_for('admin_users') }}" class="btn btn-secondary mb-4">
+                ← Back to Users List
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

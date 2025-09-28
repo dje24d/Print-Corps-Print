@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Order #{{ order.id }} - PrintCorps{% endblock %}
+
+{% block content %}
+<div class="order-container">
+    <div class="order-header">
+        <h2>Order #{{ order.id }}</h2>
+        <div class="order-meta">
+            <span class="badge badge-{{ order.status.lower() }}">{{ order.status }}</span>
+            <span>Submitted on {{ order.created_at.strftime('%b %d, %Y at %H:%M') }}</span>
+            <span class="priority-badge priority-{{ order.priority_level.lower() }}">
+                <i class="fas fa-{% if order.priority_level == 'Rush' %}bolt{% elif order.priority_level == 'High' %}running{% else %}walking{% endif %}"></i>
+                {{ order.priority_level }} Priority
+            </span>
+        </div>
+    </div>
+
+    <div class="order-details">
+        <div class="detail-card">
+            <h3><i class="fas fa-user"></i> Client Information</h3>
+            <p><strong>Name:</strong> {{ order.user.username }}</p>
+            <p><strong>Client Since:</strong> {{ order.user.created_at.strftime('%b %Y') }}</p>
+            <p><strong>Total Orders:</strong> {{ order.user.orders|length }}</p>
+        </div>
+
+        <div class="detail-card">
+            <h3><i class="fas fa-print"></i> Printing Specifications</h3>
+            <div class="specs-grid">
+                <div class="spec-item">
+                    <span class="spec-label">Paper Type:</span>
+                    <span class="spec-value">{{ order.paper_type }}</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Paper Size:</span>
+                    <span class="spec-value">{{ order.paper_size }}</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Copies:</span>
+                    <span class="spec-value">{{ order.copies }}</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Pages:</span>
+                    <span class="spec-value">{{ order.pages }}</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Print Type:</span>
+                    <span class="spec-value">
+                        {% if order.color %}
+                            <i class="fas fa-palette text-primary"></i> Color
+                        {% else %}
+                            <i class="fas fa-moon"></i> Black & White
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Total Price:</span>
+                    <span class="spec-value price">{{ format_currency(order.price) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-card">
+            <h3><i class="fas fa-file-alt"></i> Document Details</h3>
+            <p><strong>Original Filename:</strong> {{ order.original_filename }}</p>
+            <p><strong>Uploaded File:</strong> 
+                <a href="{{ url_for('download_order', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-download"></i> Download
+                </a>
+            </p>
+            {% if order.user_notes %}
+            <div class="user-notes">
+                <h4>Special Instructions:</h4>
+                <p>{{ order.user_notes }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if current_user.is_admin and order.admin_notes %}
+        <div class="detail-card admin-notes">
+            <h3><i class="fas fa-clipboard-check"></i> Admin Notes</h3>
+            <p>{{ order.admin_notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="order-actions">
+        {% if current_user.is_admin %}
+        <form method="POST" action="{{ url_for('update_status', order_id=order.id) }}" class="status-form">
+            <div class="form-group">
+                <label for="status">Update Status:</label>
+                <select name="status" id="status" class="form-control">
+                    <option value="Pending" {% if order.status == 'Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Processing" {% if order.status == 'Processing' %}selected{% endif %}>Processing</option>
+                    <option value="Completed" {% if order.status == 'Completed' %}selected{% endif %}>Completed</option>
+                    <option value="Cancelled" {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Update
+            </button>
+        </form>
+        {% endif %}
+
+        <div class="action-buttons">
+            <a href="{% if current_user.is_admin %}{{ url_for('admin_orders') }}{% else %}{{ url_for('dashboard') }}{% endif %}" 
+               class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to {% if current_user.is_admin %}Orders{% else %}Dashboard{% endif %}
+            </a>
+            
+            {% if order.status == 'Pending' and not current_user.is_admin %}
+            <form method="POST" action="{{ url_for('cancel_order', order_id=order.id) }}" class="cancel-form">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-times"></i> Cancel Order
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Order Details - #{{ order.id }}</h2>
+        <a href="{{ url_for('admin_orders') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Orders
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Order Information -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Order Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>File Name:</strong> {{ order.original_filename }}</p>
+                            <p><strong>Pages:</strong> {{ order.pages }}</p>
+                            <p><strong>Copies:</strong> {{ order.copies }}</p>
+                            <p><strong>Paper Type:</strong> {{ order.paper_type }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Paper Size:</strong> {{ order.paper_size }}</p>
+                            <p><strong>Color:</strong> {{ 'Yes' if order.color else 'No' }}</p>
+                            <p><strong>Priority:</strong> 
+                                <span class="badge {% if order.priority_level == 'Rush' %}bg-danger{% elif order.priority_level == 'High' %}bg-warning{% else %}bg-info{% endif %}">
+                                    {{ order.priority_level }}
+                                </span>
+                            </p>
+                            <p><strong>Total Price:</strong> {{ order.price|format_currency }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status and Assignment -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Status & Assignment</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Status:</strong> 
+                                <span class="badge 
+                                    {% if order.status == 'Completed' %}bg-success
+                                    {% elif order.status == 'Processing' %}bg-primary
+                                    {% elif order.status == 'Cancelled' %}bg-danger
+                                    {% else %}bg-warning{% endif %}">
+                                    {{ order.status }}
+                                </span>
+                            </p>
+                            <p><strong>Payment Status:</strong> 
+                                <span class="badge 
+                                    {% if order.payment_status == 'Completed' %}bg-success
+                                    {% elif order.payment_status == 'Pending' %}bg-warning
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ order.payment_status }}
+                                </span>
+                            </p>
+                            <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Assigned To:</strong> 
+                                {% if order.assigned_admin_id and assigned_admin %}
+                                    {{ assigned_admin.username }}
+                                {% else %}
+                                    <span class="text-muted">Not assigned</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Processed By:</strong> 
+                                {% if order.processed_by_id and processed_by %}
+                                    {{ processed_by.username }}
+                                {% else %}
+                                    <span class="text-muted">Not processed</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Created:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Processing Information Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Processing Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Processing Started:</strong> 
+                                {% if order.processing_started_at %}
+                                    {{ order.processing_started_at.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    <span class="text-muted">Not started</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Processing Completed:</strong> 
+                                {% if order.processing_completed_at %}
+                                    {{ order.processing_completed_at.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    <span class="text-muted">Not completed</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Processing Time:</strong> 
+                                {% if processing_time %}
+                                    {{ processing_time }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Processed By:</strong> 
+                                {% if processed_by %}
+                                    {{ processed_by.username }}
+                                {% else %}
+                                    <span class="text-muted">Not processed</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Completion Form -->
+                    {% if order.status == 'Processing' and (current_user.is_superadmin or order.assigned_admin_id == current_user.id) %}
+                    <hr>
+                    <h6>Complete Order</h6>
+                    <form method="POST" action="{{ url_for('complete_order_admin', order_id=order.id) }}">
+                        <div class="mb-3">
+                            <label for="completion_notes" class="form-label">Completion Notes (Optional)</label>
+                            <textarea class="form-control" id="completion_notes" name="completion_notes" 
+                                      rows="3" placeholder="Add any notes about order completion...">{{ request.form.get('completion_notes', '') }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check-circle"></i> Mark as Completed
+                        </button>
+                    </form>
+                    {% elif order.status == 'Completed' %}
+                    <div class="alert alert-success mt-3">
+                        <i class="fas fa-check-circle"></i> This order was completed on {{ order.processing_completed_at.strftime('%Y-%m-%d at %H:%M') }}
+                        {% if processed_by %}by {{ processed_by.username }}{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Notes -->
+            {% if order.user_notes or order.admin_notes %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Notes</h5>
+                </div>
+                <div class="card-body">
+                    {% if order.user_notes %}
+                    <div class="mb-3">
+                        <strong>Customer Notes:</strong>
+                        <p class="text-muted">{{ order.user_notes }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if order.admin_notes %}
+                    <div>
+                        <strong>Admin Notes:</strong>
+                        <p class="text-muted">{{ order.admin_notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Customer Information and Actions -->
+        <div class="col-md-4">
+            <!-- Customer Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Username:</strong> {{ customer.username }}</p>
+                    {% if customer.full_name %}
+                    <p><strong>Full Name:</strong> {{ customer.full_name }}</p>
+                    {% endif %}
+                    {% if customer.email %}
+                    <p><strong>Email:</strong> {{ customer.email }}</p>
+                    {% endif %}
+                    {% if customer.phone_number %}
+                    <p><strong>Phone:</strong> {{ customer.phone_number }}</p>
+                    {% endif %}
+                    {% if order.delivery_address %}
+                    <p><strong>Delivery Address:</strong> {{ order.delivery_address }}</p>
+                    {% endif %}
+                    {% if order.delivery_contact %}
+                    <p><strong>Delivery Contact:</strong> {{ order.delivery_contact }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('download_order', order_id=order.id) }}" class="btn btn-primary">
+                            <i class="fas fa-download me-1"></i> Download File
+                        </a>
+                        
+                        <a href="{{ url_for('edit_order', order_id=order.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit me-1"></i> Edit Order
+                        </a>
+
+                        {% if current_user.is_superadmin %}
+                        <form method="POST" action="{{ url_for('assign_order', order_id=order.id) }}" class="d-grid">
+                            <select name="admin_id" class="form-select mb-2" onchange="this.form.submit()">
+                                <option value="">-- Assign to Admin --</option>
+                                {% for admin in admins %}
+                                <option value="{{ admin.id }}" {% if order.assigned_admin_id == admin.id %}selected{% endif %}>
+                                    {{ admin.username }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                        {% endif %}
+
+                        <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" class="d-grid">
+                            <select name="status" class="form-select mb-2" onchange="this.form.submit()">
+                                <option value="Pending" {% if order.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                <option value="Processing" {% if order.status == 'Processing' %}selected{% endif %}>Processing</option>
+                                <option value="Completed" {% if order.status == 'Completed' %}selected{% endif %}>Completed</option>
+                                <option value="Cancelled" {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

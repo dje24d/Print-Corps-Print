@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Order - PrintCorps{% endblock %}
+
+{% block content %}
+<section class="order-submission">
+    <div class="container">
+        <div class="header">
+            <h2><i class="fas fa-file-upload"></i> Submit New Print Order</h2>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <div class="order-form-container">
+            <form method="POST" action="{{ url_for('submit_order') }}" enctype="multipart/form-data" class="order-form">
+                <!-- File Upload Section -->
+                <div class="form-group file-upload-group">
+                    <label for="file" class="file-upload-label">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span id="file-name">Choose your document...</span>
+                        <input type="file" name="file" id="file" accept=".pdf,.doc,.docx,.jpg,.png" required>
+                    </label>
+                    <small class="form-text">Supported formats: PDF, DOC, DOCX, JPG, PNG (Max 16MB)</small>
+                </div>
+
+                <!-- Print Specifications Card -->
+                <div class="specifications-card">
+                    <div class="card-header">
+                        <i class="fas fa-print"></i> Printing Specifications
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <!-- Paper Type -->
+                            <div class="form-group">
+                                <label for="paper_type">Paper Type</label>
+                                <select class="form-control" name="paper_type" id="paper_type" required>
+                                    <option value="Plain Paper">Plain Paper</option>
+                                    <option value="Art Paper">Art Paper</option>
+                                    <option value="Art Board">Art Board</option>
+                                </select>
+                            </div>
+
+                            <!-- Paper Size -->
+                            <div class="form-group">
+                                <label for="paper_size">Paper Size</label>
+                                <select class="form-control" name="paper_size" id="paper_size" required>
+                                    <option value="A4">A4 (210 × 297 mm)</option>
+                                    <option value="A3">A3 (297 × 420 mm)</option>
+                                    <option value="A5">A5 (148 × 210 mm)</option>
+                                    <option value="Other">Other (Specify in notes)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Enhanced Page and Copies Input Fields -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="pages" class="form-label">Number of Pages</label>
+                                <input type="number" class="form-control" id="pages" name="pages" min="1" max="500" required value="1">
+                                <div class="form-text">Will be automatically detected from your document</div>
+                                <!-- Page detection message will be inserted here by JavaScript -->
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="copies" class="form-label">Number of Copies</label>
+                                <input type="number" class="form-control" id="copies" name="copies" min="1" max="100" required value="1">
+                            </div>
+                        </div>
+
+                        <!-- Print Type -->
+                        <div class="form-group">
+                            <label>Print Type</label>
+                            <div class="print-type-options">
+                                <label class="option">
+                                    <input type="radio" name="color" value="true" checked>
+                                    <span class="option-box color-option">
+                                        <i class="fas fa-palette"></i> Color
+                                    </span>
+                                </label>
+                                <label class="option">
+                                    <input type="radio" name="color" value="false">
+                                    <span class="option-box bw-option">
+                                        <i class="fas fa-moon"></i> Black & White
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Special Instructions Section -->
+                <div class="form-group">
+                    <label for="user_notes">Special Instructions</label>
+                    <textarea name="user_notes" id="user_notes" class="form-control" 
+                              rows="3" maxlength="500" placeholder="Any special printing instructions? (e.g., double-sided, specific paper type)"></textarea>
+                    <small class="form-text text-muted">Maximum 500 characters</small>
+                    <div class="chars-remaining">
+                        <span id="notes-counter">500</span> characters remaining
+                    </div>
+                </div>
+
+                <!-- Priority Section -->
+                <div class="form-group priority-group">
+                    <label>Priority Level</label>
+                    <div class="priority-options">
+                        <label class="priority-option">
+                            <input type="radio" name="priority" value="Normal" checked>
+                            <span class="badge badge-normal">
+                                <i class="fas fa-walking"></i> Normal (3-5 days)
+                            </span>
+                            <small class="price-hint">200 UGX (BW)/500UGX (CLR)</small>
+                        </label>
+                        <label class="priority-option">
+                            <input type="radio" name="priority" value="High">
+                            <span class="badge badge-high">
+                                <i class="fas fa-running"></i> High (48 hours)
+                            </span>
+                            <small class="price-hint">300 UGX (BW)/750UGX (CLR) (+50%)</small>
+                        </label>
+                        <label class="priority-option">
+                            <input type="radio" name="priority" value="Rush">
+                            <span class="badge badge-rush">
+                                <i class="fas fa-bolt"></i> Rush (24 hours)
+                            </span>
+                            <small class="price-hint">400 UGX (BW)/1000UGX (CLR) (+100%)</small>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Payment Method Selection -->
+                <div class="form-group payment-methods">
+                    <label>Payment Method</label>
+                    <div class="payment-options">
+                        <!-- Mobile Money Option -->
+                        <label class="payment-option">
+                            <input type="radio" name="payment_method" value="Mobile Money" checked>
+                            <div class="payment-card">
+                                <i class="fas fa-mobile-alt"></i>
+                                <span>Mobile Money</span>
+                            </div>
+                        </label>
+                        
+                        <!-- Pay on Delivery Option -->
+                        <label class="payment-option">
+                            <input type="radio" name="payment_method" value="Pay on Delivery">
+                            <div class="payment-card">
+                                <i class="fas fa-truck"></i>
+                                <span>Pay on Delivery</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Mobile Money Details -->
+                <div class="form-group mobile-money-details" id="mobile_payment_section">
+                    <label for="mobile_number">Mobile Money Number</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">+256</span>
+                        </div>
+                        <input type="tel" name="mobile_number" id="mobile_number" 
+                            class="form-control" placeholder="772123456"
+                            pattern="[0-9]{9}" title="Enter 9-digit number without country code">
+                    </div>
+                    <small class="form-text text-muted">Enter your MTN/Airtel number without country code</small>
+
+                    <!-- Mobile Money Provider Selection -->
+                    <div class="provider-options mt-3">
+                        <label class="provider-option">
+                            <input type="radio" name="mobile_money_provider" value="MTN Momo" checked>
+                            <div class="provider-card">
+                                <span>MTN Momo</span>
+                            </div>
+                        </label>
+                        <label class="provider-option">
+                            <input type="radio" name="mobile_money_provider" value="Airtel Money">
+                            <div class="provider-card">
+                                <span>Airtel Money</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Delivery Address Section -->
+                <div class="form-group delivery-address" id="delivery_address_section" style="display: none;">
+                    <label for="delivery_address">Delivery Address</label>
+                    <textarea name="delivery_address" id="delivery_address" class="form-control" 
+                              rows="3" placeholder="Please provide your complete delivery address"></textarea>
+                    <small class="form-text text-muted">Required for pay on delivery orders</small>
+                </div>
+
+                <!-- Cost Estimate -->
+                <div class="cost-estimate">
+                    <h4>Estimated Cost: <span id="estimated_price">0 UGX</span></h4>
+                    <small>Final cost may vary based on document complexity</small>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-group submit-group">
+                    <button type="submit" class="btn btn-submit">
+                        <i class="fas fa-paper-plane"></i> Submit Order
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all form elements that affect pricing
+    const pagesInput = document.getElementById('pages');
+    const copiesInput = document.getElementById('copies');
+    const paperTypeSelect = document.getElementById('paper_type');
+    const paperSizeSelect = document.getElementById('paper_size');
+    const colorCheckbox = document.querySelector('input[name="color"][value="true"]');
+    const prioritySelect = document.querySelector('input[name="priority"]:checked');
+    const priceDisplay = document.getElementById('estimated_price');
+    
+    // Elements to show/hide based on payment method
+    const paymentMethodSelect = document.querySelectorAll('input[name="payment_method"]');
+    const mobilePaymentSection = document.getElementById('mobile_payment_section');
+    const deliveryAddressSection = document.getElementById('delivery_address_section');
+    
+    // Paper type multipliers
+    const paperTypeMultipliers = {
+        "Plain Paper": 1.0,
+        "Art Paper": 1.2,
+        "Art Board": 1.4
+    };
+    
+    // Paper size multipliers
+    const paperSizeMultipliers = {
+        "A3": 2.0,
+        "A4": 1.0,
+        "A5": 0.5,
+        "Other": 5.0
+    };
+    
+    // Priority multipliers
+    const priorityMultipliers = {
+        'Normal': 1.0,
+        'High': 1.5,
+        'Rush': 2.0
+    };
+    
+    // Base price per page
+    const basePrice = 200; // UGX per page
+    
+    // Function to calculate price
+    function calculatePrice() {
+        const pages = parseInt(pagesInput.value) || 1;
+        const copies = parseInt(copiesInput.value) || 1;
+        const paperType = paperTypeSelect.value;
+        const paperSize = paperSizeSelect.value;
+        const isColor = document.querySelector('input[name="color"]:checked').value === 'true';
+        const priority = document.querySelector('input[name="priority"]:checked').value;
+        
+        // Validate inputs
+        if (pages < 1 || pages > 500) return;
+        if (copies < 1 || copies > 100) return;
+        
+        // Calculate total
+        let total = basePrice * pages * copies;
+        total *= paperTypeMultipliers[paperType] || 1.0;
+        total *= paperSizeMultipliers[paperSize] || 1.0;
+        total *= isColor ? 2.5 : 1.0;
+        total *= priorityMultipliers[priority] || 1.0;
+        
+        // Update display
+        priceDisplay.textContent = 'UGX ' + Math.round(total).toLocaleString();
+    }
+    
+    // Add event listeners to all relevant form elements
+    const priceAffectingElements = [pagesInput, copiesInput, paperTypeSelect, paperSizeSelect];
+    priceAffectingElements.forEach(element => {
+        element.addEventListener('change', calculatePrice);
+        element.addEventListener('input', calculatePrice);
+    });
+    
+    // Add event listeners for radio buttons
+    document.querySelectorAll('input[name="color"]').forEach(radio => {
+        radio.addEventListener('change', calculatePrice);
+    });
+    
+    document.querySelectorAll('input[name="priority"]').forEach(radio => {
+        radio.addEventListener('change', calculatePrice);
+    });
+    
+    // Calculate initial price
+    calculatePrice();
+    
+    // Handle payment method change
+    function handlePaymentMethodChange() {
+        const method = document.querySelector('input[name="payment_method"]:checked').value;
+        
+        if (method === 'Mobile Money') {
+            mobilePaymentSection.style.display = 'block';
+            deliveryAddressSection.style.display = 'none';
+        } else if (method === 'Pay on Delivery') {
+            mobilePaymentSection.style.display = 'none';
+            deliveryAddressSection.style.display = 'block';
+        } else {
+            mobilePaymentSection.style.display = 'none';
+            deliveryAddressSection.style.display = 'none';
+        }
+    }
+    
+    // Add event listener for payment method change
+    paymentMethodSelect.forEach(radio => {
+        radio.addEventListener('change', handlePaymentMethodChange);
+    });
+    
+    // Set initial state
+    handlePaymentMethodChange();
+
+    // File name display
+    document.getElementById('file').addEventListener('change', function(e) {
+        const fileName = e.target.files[0]?.name || 'Choose your document...';
+        document.getElementById('file-name').textContent = fileName;
+    });
+
+    // Character counter for notes
+    const notesTextarea = document.getElementById('user_notes');
+    const counter = document.getElementById('notes-counter');
+    
+    notesTextarea.addEventListener('input', function() {
+        const remaining = 500 - this.value.length;
+        counter.textContent = remaining;
+        counter.classList.toggle('text-warning', remaining < 50);
+        counter.classList.toggle('text-danger', remaining < 10);
+    });
+
+    // Client-side validation
+    document.querySelector('.order-form').addEventListener('submit', function(e) {
+        const fileInput = document.getElementById('file');
+        const file = fileInput.files[0];
+        const allowedTypes = ['application/pdf', 'application/msword', 
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            'image/jpeg', 'image/png'];
+        const maxSize = 16 * 1024 * 1024; // 16MB
+
+        if (file) {
+            // Validate file type
+            if (!allowedTypes.includes(file.type)) {
+                alert('Error: Invalid file type. Please upload PDF, DOC, DOCX, JPG, or PNG files.');
+                e.preventDefault();
+                return;
+            }
+
+            // Validate file size
+            if (file.size > maxSize) {
+                alert(`Error: File too large. Maximum size is ${maxSize/(1024*1024)}MB`);
+                e.preventDefault();
+                return;
+            }
+        }
+
+        // Validate page count
+        const pages = parseInt(document.getElementById('pages').value);
+        if (isNaN(pages) || pages < 1 || pages > 500) {
+            alert('Please enter a valid number of pages (1-500)');
+            e.preventDefault();
+        }
+
+        // Validate copies
+        const copies = parseInt(document.getElementById('copies').value);
+        if (isNaN(copies) || copies < 1 || copies > 100) {
+            alert('Please enter a valid number of copies (1-100)');
+            e.preventDefault();
+        }
+
+        // Validate payment method specific fields
+        const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+        if (paymentMethod === 'Mobile Money') {
+            const mobileNumber = document.getElementById('mobile_number').value;
+            if (!mobileNumber || !/^\d{9}$/.test(mobileNumber)) {
+                alert('Please enter a valid 9-digit mobile money number');
+                e.preventDefault();
+            }
+        } else if (paymentMethod === 'Pay on Delivery') {
+            const deliveryAddress = document.getElementById('delivery_address').value;
+            if (!deliveryAddress || deliveryAddress.trim().length < 10) {
+                alert('Please provide a valid delivery address (at least 10 characters)');
+                e.preventDefault();
+            }
+        }
+    });
+
+    // Initialize visual states
+    document.querySelector('.option-box.color-option').classList.add('active');
+
+    // Automatic page detection functionality
+    const fileInput = document.getElementById('file');
+    const pagesInput = document.getElementById('pages');
+    const detectionMessage = document.createElement('div');
+    detectionMessage.className = 'form-text text-info';
+    detectionMessage.id = 'page-detection-message';
+    pagesInput.parentNode.appendChild(detectionMessage);
+    
+    fileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            detectionMessage.textContent = 'Detecting page count...';
+            
+            const formData = new FormData();
+            formData.append('file', this.files[0]);
+            
+            // Send file to server for page detection
+            fetch('/detect_pages', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.page_count) {
+                    pagesInput.value = data.page_count;
+                    detectionMessage.textContent = `Detected ${data.page_count} pages`;
+                    calculatePrice(); // Update price estimation
+                } else {
+                    detectionMessage.textContent = 'Could not auto-detect page count. Please enter manually.';
+                }
+            })
+            .catch(error => {
+                detectionMessage.textContent = 'Error detecting page count. Please enter manually.';
+                console.error('Error:', error);
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

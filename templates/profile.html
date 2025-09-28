@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - PrintCorps{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- User Information -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>My Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Username:</strong> {{ user.username }}
+                    </div>
+                    {% if user.full_name %}
+                    <div class="mb-3">
+                        <strong>Full Name:</strong> {{ user.full_name }}
+                    </div>
+                    {% endif %}
+                    {% if user.email %}
+                    <div class="mb-3">
+                        <strong>Email:</strong> {{ user.email }}
+                    </div>
+                    {% endif %}
+                    {% if user.phone_number %}
+                    <div class="mb-3">
+                        <strong>Phone:</strong> {{ user.phone_number }}
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <strong>Member Since:</strong> {{ user.created_at.strftime('%Y-%m-%d') }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Statistics -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>My Order Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">Total Orders: {{ order_stats.total_orders }}</div>
+                    <div class="mb-2">Pending: {{ order_stats.pending_orders }}</div>
+                    <div class="mb-2">Processing: {{ order_stats.processing_orders }}</div>
+                    <div class="mb-2">Completed: {{ order_stats.completed_orders }}</div>
+                    <div class="mb-2">Cancelled: {{ order_stats.cancelled_orders }}</div>
+                    <div class="mb-2">
+                        <strong>Total Spent:</strong> {{ format_currency(order_stats.total_spent) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order History -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>My Order History</h5>
+                </div>
+                <div class="card-body">
+                    {% if orders %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>File</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td>{{ order.original_filename|truncate(20) }}</td>
+                                    <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if order.status == 'Completed' %}success
+                                        {% elif order.status == 'Processing' %}info
+                                        {% elif order.status == 'Cancelled' %}danger
+                                        {% else %}warning{% endif %}">
+                                            {{ order.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ format_currency(order.price) }}</td>
+                                    <td>
+                                        <a href="{{ url_for('view_order', order_id=order.id) }}" class="btn btn-sm btn-info">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No orders yet. <a href="{{ url_for('submit_order') }}">Place your first order!</a></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

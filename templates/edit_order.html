@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Order - PrintCorps{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-welcome">
+        <h2>Edit Order #{{ order.id }}</h2>
+        <p>Update the order details below. Make sure all information is correct before submitting.</p>
+    </div>
+
+    <div class="order-container">
+        <form method="POST">
+            <!-- Status -->
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select name="status" id="status" class="status-select">
+                    <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>
+                        ⏳ Pending
+                    </option>
+                    <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>
+                        🔄 Processing
+                    </option>
+                    <option value="completed" {% if order.status == 'completed' %}selected{% endif %}>
+                        ✅ Completed
+                    </option>
+                    <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>
+                        ❌ Cancelled
+                    </option>
+                </select>
+            </div>
+
+            <!-- Priority -->
+            <div class="form-group">
+                <label>Priority</label>
+                <div class="priority-options">
+                    <label class="priority-option">
+                        <input type="radio" name="priority" value="normal" {% if order.priority == 'normal' %}checked{% endif %}>
+                        <span class="badge badge-normal">🟢 Normal</span>
+                    </label>
+                    <label class="priority-option">
+                        <input type="radio" name="priority" value="high" {% if order.priority == 'high' %}checked{% endif %}>
+                        <span class="badge badge-high">🟠 High</span>
+                    </label>
+                    <label class="priority-option">
+                        <input type="radio" name="priority" value="rush" {% if order.priority == 'rush' %}checked{% endif %}>
+                        <span class="badge badge-rush">🔴 Rush</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea name="notes" id="notes" class="form-group form-control" rows="4">{{ order.notes }}</textarea>
+            </div>
+
+            <!-- Actions -->
+            <div class="order-actions">
+                <button type="submit" class="btn btn-primary">
+                    💾 Update Order
+                </button>
+                <a href="{{ url_for('view_order', order_id=order.id) }}" class="btn btn-secondary">
+                    ❌ Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

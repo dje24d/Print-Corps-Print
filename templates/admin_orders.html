@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Orders - PrintCorps{% endblock %}
+
+{% block content %}
+<section class="admin-container">
+    <div class="admin-header">
+        <h2><i class="fas fa-clipboard-list"></i> Order Management</h2>
+        <div class="admin-actions">
+            <form method="GET" class="search-form">
+                <input type="text" name="search" placeholder="Search orders..." value="{{ request.args.get('search', '') }}">
+                <button type="submit" class="btn btn-sm">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="admin-filters">
+        <div class="filter-group">
+            <span>Filter by status:</span>
+            <div class="status-filters">
+                <a href="{{ url_for('admin_orders', search=request.args.get('search', '')) }}" 
+                   class="filter-btn {% if not status_filter %}active{% endif %}">
+                    All ({{ counts.all }})
+                </a>
+                <a href="{{ url_for('admin_orders', status='Pending', search=request.args.get('search', '')) }}" 
+                   class="filter-btn {% if status_filter == 'Pending' %}active{% endif %}">
+                    Pending ({{ counts.pending }})
+                </a>
+                <a href="{{ url_for('admin_orders', status='Processing', search=request.args.get('search', '')) }}" 
+                   class="filter-btn {% if status_filter == 'Processing' %}active{% endif %}">
+                    Processing ({{ counts.processing }})
+                </a>
+                <a href="{{ url_for('admin_orders', status='Completed', search=request.args.get('search', '')) }}" 
+                   class="filter-btn {% if status_filter == 'Completed' %}active{% endif %}">
+                    Completed ({{ counts.completed }})
+                </a>
+                <a href="{{ url_for('admin_orders', status='Cancelled', search=request.args.get('search', '')) }}" 
+                   class="filter-btn {% if status_filter == 'Cancelled' %}active{% endif %}">
+                    Cancelled ({{ counts.cancelled }})
+                </a>
+            </div>
+        </div>
+        
+        <!-- Distance Filter for Regular Admins -->
+        {% if not current_user.is_superadmin and current_user.location_set %}
+        <div class="filter-group">
+            <span>Show:</span>
+            <div class="status-filters">
+                <a href="{{ url_for('admin_orders', status=status_filter, search=request.args.get('search', ''), vicinity='all') }}" 
+                   class="filter-btn {% if request.args.get('vicinity', 'all') == 'all' %}active{% endif %}">
+                    All Orders
+                </a>
+                <a href="{{ url_for('admin_orders', status=status_filter, search=request.args.get('search', ''), vicinity='nearby') }}" 
+                   class="filter-btn {% if request.args.get('vicinity') == 'nearby' %}active{% endif %}">
+                    Nearby Only (≤10km)
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Location Status Alert -->
+    {% if not current_user.is_superadmin and not current_user.location_set %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Location not set!</strong> You need to 
+        <a href="{{ url_for('set_admin_location') }}" class="alert-link">set your location</a> 
+        to see distance information and access nearby orders.
+    </div>
+    {% endif %}
+
+    <!-- Available Orders in Vicinity Info -->
+    {% if available_orders_in_vicinity and not current_user.is_superadmin %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>{{ available_orders_in_vicinity|length }} order(s)</strong> available in your vicinity (within 10km).
+        These are highlighted in the table below.
+    </div>
+    {% endif %}
+
+    <div class="admin-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>File Name</th>
+                    <th>Customer</th>
+                    <th>Pages</th>
+                    <th>Copies</th>
+                    <th>Color</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    {% if not current_user.is_superadmin and current_user.location_set %}
+                    <th>Distance</th>
+                    {% endif %}
+                    <th>Submitted</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders.items %}
+                {% set is_nearby = order in available_orders_in_vicinity if available_orders_in_vicinity else false %}
+                <tr class="{% if is_nearby %}nearby-order{% endif %}">
+                    <td>#{{ order.id }}</td>
+                    <td>{{ order.original_filename }}</td>
+                    <td>{{ order.customer.username if order.customer else 'N/A' }}</td>
+                    <td>{{ order.pages }}</td>
+                    <td>{{ order.copies }}</td>
+                    <td>{{ 'Yes' if order.color else 'No' }}</td>
+                    <td>{{ order.price|format_currency }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if order.status == 'Completed' %}bg-success
+                            {% elif order.status == 'Processing' %}bg-primary
+                            {% elif order.status == 'Cancelled' %}bg-danger
+                            {% else %}bg-warning{% endif %}">
+                            {{ order.status }}
+                        </span>
+                    </td>
+                    
+                    <!-- Distance Column -->
+                    {% if not current_user.is_superadmin and current_user.location_set %}
+                    <td>
+                        {% if order.delivery_latitude and order.delivery_longitude %}
+                            {% if hasattr(order, 'distance') %}
+                                <span class="distance-badge {% if order.distance <= 10 %}nearby{% else %}far{% endif %}">
+                                    {{ "%.1f"|format(order.distance) }} km
+                                </span>
+                            {% else %}
+                                <span class="text-muted">Unknown</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">No location</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    
+                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('view_order', order_id=order.id) }}" class="btn btn-sm btn-info" title="View Details">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        
+                        <!-- Download/Accept Button with different behavior for nearby orders -->
+                        {% if is_nearby and order.status == 'Pending' %}
+                        <a href="{{ url_for('download_order', order_id=order.id) }}" 
+                           class="btn btn-sm btn-success" 
+                           title="Accept and Download">
+                            <i class="fas fa-check-circle"></i> Accept
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('download_order', order_id=order.id) }}" 
+                           class="btn btn-sm btn-primary" 
+                           title="Download">
+                            <i class="fas fa-download"></i>
+                        </a>
+                        {% endif %}
+                        
+                        {% if current_user.is_superadmin %}
+                        <a href="{{ url_for('edit_order', order_id=order.id) }}" class="btn btn-sm btn-warning" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{% if not current_user.is_superadmin and current_user.location_set %}11{% else %}10{% endif %}" class="no-orders">
+                        <i class="fas fa-inbox"></i>
+                        <p>No orders found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if orders.pages > 1 %}
+    <div class="pagination">
+        {% if orders.has_prev %}
+            <a href="{{ url_for('admin_orders', 
+                               page=orders.prev_num, 
+                               status=status_filter, 
+                               search=request.args.get('search', ''),
+                               sort=sort_column,
+                               direction=sort_direction,
+                               vicinity=request.args.get('vicinity', '')) }}" 
+               class="page-link">
+                <i class="fas fa-chevron-left"></i> Previous
+            </a>
+        {% endif %}
+        
+        <span class="current-page">
+            Page {{ orders.page }} of {{ orders.pages }}
+        </span>
+        
+        {% if orders.has_next %}
+            <a href="{{ url_for('admin_orders', 
+                               page=orders.next_num, 
+                               status=status_filter, 
+                               search=request.args.get('search', ''),
+                               sort=sort_column,
+                               direction=sort_direction,
+                               vicinity=request.args.get('vicinity', '')) }}" 
+               class="page-link">
+                Next <i class="fas fa-chevron-right"></i>
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+
+<style>
+/* Additional styles for the new table structure */
+.admin-container {
+    padding: 20px;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.admin-table table th,
+.admin-table table td {
+    text-align: left;
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+/* Adjust column widths to accommodate new distance column */
+.admin-table table th:nth-child(1) { width: 80px; }
+.admin-table table th:nth-child(2) { width: 200px; }
+.admin-table table th:nth-child(3) { width: 120px; }
+.admin-table table th:nth-child(4),
+.admin-table table th:nth-child(5),
+.admin-table table th:nth-child(6) { width: 80px; }
+.admin-table table th:nth-child(7) { width: 100px; }
+.admin-table table th:nth-child(8) { width: 120px; }
+{% if not current_user.is_superadmin and current_user.location_set %}
+.admin-table table th:nth-child(9) { width: 100px; } /* Distance column */
+.admin-table table th:nth-child(10) { width: 140px; }
+.admin-table table th:nth-child(11) { width: 180px; }
+{% else %}
+.admin-table table th:nth-child(9) { width: 140px; }
+.admin-table table th:nth-child(10) { width: 180px; }
+{% endif %}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 12px;
+    margin: 2px;
+}
+
+.badge {
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.bg-success { background-color: #28a745; color: white; }
+.bg-primary { background-color: #007bff; color: white; }
+.bg-danger { background-color: #dc3545; color: white; }
+.bg-warning { background-color: #ffc107; color: #212529; }
+
+/* Distance badge styling */
+.distance-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.distance-badge.nearby {
+    background-color: #28a745;
+    color: white;
+}
+
+.distance-badge.far {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Nearby order highlighting */
+.nearby-order {
+    background-color: rgba(40, 167, 69, 0.05) !important;
+    border-left: 3px solid #28a745;
+}
+
+.nearby-order:hover {
+    background-color: rgba(40, 167, 69, 0.1) !important;
+}
+
+/* Filter styles */
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.status-filters {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 6px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #495057;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* Alert styles */
+.alert {
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+}
+
+.alert-warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+}
+
+.alert-info {
+    color: #0c5460;
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+}
+
+.alert-link {
+    color: #002752;
+    font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .admin-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .admin-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .search-form {
+        flex: 1;
+        margin-right: 10px;
+    }
+    
+    .filter-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .status-filters {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 10px;
+    }
+    
+    .admin-table {
+        overflow-x: auto;
+    }
+    
+    .admin-table table {
+        font-size: 14px;
+    }
+    
+    .btn-sm {
+        margin-bottom: 5px;
+    }
+}
+</style>
+{% endblock %}

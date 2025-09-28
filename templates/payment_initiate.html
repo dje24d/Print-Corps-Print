@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Initiate Payment - Order #{{ order.id }} - Print Corps{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Initiate Mobile Money Payment</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5>Order Summary</h5>
+                        <p><strong>Order ID:</strong> #{{ order.id }}</p>
+                        <p><strong>File:</strong> {{ order.original_filename }}</p>
+                        <p><strong>Total Amount:</strong> {{ format_currency(order.price) }}</p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">MTN Mobile Money</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>To pay with MTN Mobile Money:</p>
+                                    <ol>
+                                        <li>Dial <code>{{ mtn_link }}</code></li>
+                                        <li>Follow the prompts to complete payment</li>
+                                        <li>Wait for confirmation</li>
+                                    </ol>
+                                    <a href="{{ mtn_link }}" class="btn btn-primary w-100">
+                                        Pay with MTN
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="mb-0">Airtel Money</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>To pay with Airtel Money:</p>
+                                    <ol>
+                                        <li>Dial <code>{{ airtel_link }}</code></li>
+                                        <li>Follow the prompts to complete payment</li>
+                                        <li>Wait for confirmation</li>
+                                    </ol>
+                                    <a href="{{ airtel_link }}" class="btn btn-warning w-100">
+                                        Pay with Airtel
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6>Important Notes:</h6>
+                        <ul class="mb-0">
+                            <li>Please complete the payment within 24 hours</li>
+                            <li>Your order will be processed once payment is confirmed</li>
+                            <li>Keep your transaction reference for any inquiries</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-md-2">
+                            Back to Dashboard
+                        </a>
+                        <a href="{{ url_for('admin_orders') if current_user.is_admin else url_for('dashboard') }}" class="btn btn-primary">
+                            View Orders
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

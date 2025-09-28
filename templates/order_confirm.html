@@ -1,0 +1,68 @@
+<div class="payment-initiation">
+    <h4><i class="fas fa-mobile-alt"></i> Complete Payment</h4>
+    
+    <!-- MTN Mobile Money -->
+    <div id="mtnPayment" class="payment-option">
+        <img src="{{ url_for('static', filename='img/mtn-momo.png') }}" alt="MTN Mobile Money">
+        <a href="tel:*165*3*{{ merchant_code }}*{{ amount }}*{{ order_id }}%23" 
+           class="btn btn-pay">
+            Pay with MTN Mobile Money
+        </a>
+        <small>Will open your dialer. Press "Call" to initiate payment</small>
+    </div>
+    
+    <!-- Airtel Money -->
+    <div id="airtelPayment" class="payment-option">
+        <img src="{{ url_for('static', filename='img/airtel-money.png') }}" alt="Airtel Money">
+        <a href="tel:*185*{{ merchant_code }}*{{ amount }}%23" 
+           class="btn btn-pay">
+            Pay with Airtel Money
+        </a>
+        <small>Will open your dialer. Press "Call" to initiate payment</small>
+    </div>
+</div>
+
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Your order confirmation content -->
+<div class="payment-options">
+    <!-- MTN Mobile Money Option -->
+    <div id="mtnPayment" class="payment-option">
+        <a href="tel:*165*3*{{ merchant_code }}*{{ amount }}%23" class="btn-pay">
+            Pay with MTN Mobile Money
+        </a>
+    </div>
+    
+    <!-- Airtel Money Option -->
+    <div id="airtelPayment" class="payment-option">
+        <a href="tel:*185*{{ merchant_code }}*{{ amount }}%23" class="btn-pay">
+            Pay with Airtel Money
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Payment tracking - ADD THIS CODE
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.payment-option a').forEach(link => {
+            link.addEventListener('click', function() {
+                const provider = this.closest('.payment-option').id;
+                fetch('/track_payment_initiation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        order_id: '{{ order.id }}',
+                        provider: provider
+                    })
+                }).catch(error => console.error('Tracking error:', error));
+            });
+        });
+    });
+</script>
+{% endblock %}

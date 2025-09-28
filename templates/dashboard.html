@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - PrintCorps{% endblock %}
+
+{% block content %}
+<div class="container dashboard-container">
+    <!-- Dashboard Header with Welcome Message -->
+    <div class="dashboard-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Welcome, {{ current_user.full_name if current_user.full_name else current_user.username }}!</h2>
+            <a href="{{ url_for('profile') }}" class="btn btn-outline-primary">View My Profile</a>
+        </div>
+        
+        <div class="dashboard-actions">
+            <div class="action-buttons">
+                <a href="{{ url_for('upload_file') }}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> New Print Order
+                </a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5>Total Orders</h5>
+                    <h3>{{ status_counts.total }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5>Pending</h5>
+                    <h3>{{ status_counts.pending }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5>Processing</h5>
+                    <h3>{{ status_counts.processing }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5>Completed</h5>
+                    <h3>{{ status_counts.completed }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Statistics Section -->
+    {% if payment_distribution %}
+    <div class="dashboard-section mb-4">
+        <div class="payment-stats">
+            <h4><i class="fas fa-money-check-alt"></i> Payment Methods</h4>
+            <div class="payment-bars">
+                {% for method, percentage in payment_distribution.items() %}
+                    {% set bg_color = 'var(--info)' %}
+                    {% if method == 'Mobile Money' %}
+                        {% set bg_color = 'var(--success)' %}
+                    {% elif method == 'Pay on Delivery' %}
+                        {% set bg_color = 'var(--warning)' %}
+                    {% endif %}
+                    <div class="payment-bar">
+                        <div class="method-name">{{ method }}</div>
+                        <div class="bar-container">
+                            <div class="bar-fill" style="width: {{ percentage }}%; background-color: {{ bg_color }};">
+                                <span>{{ percentage }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Orders with Card/Table Toggle -->
+    {% if orders %}
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Recent Orders</h5>
+            <!-- Toggle Buttons -->
+            <div class="btn-group" role="group" aria-label="View toggle">
+                <button type="button" class="btn btn-outline-primary active" id="cardViewBtn">
+                    <i class="fas fa-th-large"></i> Card View
+                </button>
+                <button type="button" class="btn btn-outline-primary" id="tableViewBtn">
+                    <i class="fas fa-table"></i> Table View
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            
+            <!-- Card View -->
+            <div id="cardView">
+                <div class="row">
+                    {% for order in orders %}
+                    <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+                        <div class="card h-100 order-card">
+                            <div class="card-header">
+                                <h6 class="card-title mb-0">
+                                    <a href="{{ url_for('view_my_order', order_id=order.id) }}" class="text-decoration-none text-dark">
+                                        <i class="fas fa-file-alt me-2"></i>Order #{{ order.id }}
+                                    </a>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <strong>File:</strong> 
+                                    <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ order.original_filename }}">
+                                        {{ order.original_filename }}
+                                    </span>
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Status:</strong> 
+                                    <span class="badge 
+                                        {% if order.status == 'Completed' %}bg-success
+                                        {% elif order.status == 'Processing' %}bg-primary
+                                        {% elif order.status == 'Cancelled' %}bg-danger
+                                        {% else %}bg-warning{% endif %}">
+                                        {{ order.status }}
+                                    </span>
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Price:</strong> {{ order.price|format_currency if order.price else 'N/A' }}
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Pages:</strong> {{ order.pages }} | <strong>Copies:</strong> {{ order.copies }}
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Created:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                                {% if order.user_notes %}
+                                <div class="mt-2">
+                                    <strong>Your Notes:</strong>
+                                    <p class="text-muted small mb-0">{{ order.user_notes|truncate(50) }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <div class="btn-group w-100">
+                                    <a href="{{ url_for('view_my_order', order_id=order.id) }}" class="btn btn-sm btn-info" title="View Details">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    <a href="{{ url_for('download_my_order', order_id=order.id) }}" class="btn btn-sm btn-primary" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    {% if order.status == 'Pending' or order.status == 'Cancelled' %}
+                                    <a href="{{ url_for('reorder', order_id=order.id) }}" class="btn btn-sm btn-success" title="Reorder">
+                                        <i class="fas fa-redo"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Table View -->
+            <div id="tableView" style="display: none;">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Order ID</th>
+                                <th>File Name</th>
+                                <th>Status</th>
+                                <th>Pages</th>
+                                <th>Copies</th>
+                                <th>Price</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td><a href="{{ url_for('view_my_order', order_id=order.id) }}" class="fw-bold">#{{ order.id }}</a></td>
+                                <td><span title="{{ order.original_filename }}">{{ order.original_filename|truncate(20) }}</span></td>
+                                <td>
+                                    <span class="badge 
+                                        {% if order.status == 'Completed' %}bg-success
+                                        {% elif order.status == 'Processing' %}bg-primary
+                                        {% elif order.status == 'Cancelled' %}bg-danger
+                                        {% else %}bg-warning{% endif %}">
+                                        {{ order.status }}
+                                    </span>
+                                </td>
+                                <td>{{ order.pages }}</td>
+                                <td>{{ order.copies }}</td>
+                                <td>{{ order.price|format_currency if order.price else 'N/A' }}</td>
+                                <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('view_my_order', order_id=order.id) }}" class="btn btn-sm btn-info" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('download_my_order', order_id=order.id) }}" class="btn btn-sm btn-primary" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        {% if order.status == 'Pending' or order.status == 'Cancelled' %}
+                                        <a href="{{ url_for('reorder', order_id=order.id) }}" class="btn btn-sm btn-success" title="Reorder">
+                                            <i class="fas fa-redo"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('my_orders') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-list me-2"></i>View All Orders
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- No Orders -->
+    <div class="alert alert-info mt-4 text-center">
+        <i class="fas fa-inbox fa-3x mb-3 text-primary"></i>
+        <h4>No Orders Yet</h4>
+        <p>You haven't placed any orders yet. Upload your first file!</p>
+        <a href="{{ url_for('upload_file') }}" class="btn btn-primary"><i class="fas fa-upload me-2"></i>Upload</a>
+    </div>
+    {% endif %}
+
+    <!-- Saved Templates -->
+    {% if templates %}
+    <div class="saved-templates mt-4">
+        <div class="section-header mb-3">
+            <h3><i class="fas fa-clone"></i> Saved Templates</h3>
+        </div>
+        <div class="template-cards row">
+            {% for template in templates %}
+            <div class="col-md-4 mb-3">
+                <div class="template-card card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ template.template_name or 'Unnamed Template' }}</h5>
+                        <p>{{ template.paper_size }} {{ template.paper_type }}</p>
+                        <p>{{ template.pages }} pages × {{ template.copies }} copies</p>
+                        <p>{% if template.color %}Color{% else %}B&W{% endif %}</p>
+                        <div class="template-footer">
+                            <a href="#" class="btn btn-sm btn-primary">Use Template</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Floating Action Button -->
+<div class="floating-action">
+    <a href="{{ url_for('upload_file') }}" class="btn btn-primary btn-fab" title="New Order">
+        <i class="fas fa-plus"></i>
+    </a>
+</div>
+
+<!-- JS for View Toggle -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cardViewBtn = document.getElementById('cardViewBtn');
+    const tableViewBtn = document.getElementById('tableViewBtn');
+    const cardView = document.getElementById('cardView');
+    const tableView = document.getElementById('tableView');
+
+    const savedView = localStorage.getItem('orderViewPreference') || 'card';
+    if (savedView === 'table') { switchToTableView(); } else { switchToCardView(); }
+
+    cardViewBtn.addEventListener('click', switchToCardView);
+    tableViewBtn.addEventListener('click', switchToTableView);
+
+    function switchToCardView() {
+        cardView.style.display = 'block';
+        tableView.style.display = 'none';
+        cardViewBtn.classList.add('active');
+        tableViewBtn.classList.remove('active');
+        localStorage.setItem('orderViewPreference', 'card');
+    }
+
+    function switchToTableView() {
+        cardView.style.display = 'none';
+        tableView.style.display = 'block';
+        cardViewBtn.classList.remove('active');
+        tableViewBtn.classList.add('active');
+        localStorage.setItem('orderViewPreference', 'table');
+    }
+});
+</script>
+
+<style>
+/* Order card styles */
+.order-card { transition: transform 0.2s, box-shadow 0.2s; border: 1px solid #e9ecef; }
+.order-card:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.order-card .card-header { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-bottom: 1px solid #dee2e6; }
+.order-card .btn-group .btn { flex: 1; font-size: 0.875rem; }
+
+/* Toggle button active state */
+#cardViewBtn.active, #tableViewBtn.active { background-color: #0d6efd; color: white; border-color: #0d6efd; }
+
+/* Floating button */
+.floating-action { position: fixed; bottom: 30px; right: 30px; z-index: 1000; }
+.btn-fab { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .order-card .card-body { padding: 1rem; }
+    .table-responsive { font-size: 0.875rem; }
+}
+</style>
+{% endblock %}

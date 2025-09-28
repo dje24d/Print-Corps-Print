@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Complete Order - PrintCorps{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Step 2: Complete Your Order</h2>
+    
+    <div class="alert alert-info mb-4">
+        <h5>File: {{ file_info.original_filename }}</h5>
+        <p>Detected page co unt: <strong>{{ file_info.page_count }} pages</strong></p>
+    </div>
+    
+    <!-- Price Estimate Display with Loading Indicator -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                Estimated Cost: 
+                <span id="estimated-price">UGX {{ estimated_price|int|format_currency }}</span>
+                <span id="price-loading" class="spinner-border spinner-border-sm d-none" role="status"></span>
+            </h5>
+        </div>
+    </div>
+    
+    <form method="POST" action="{{ url_for('complete_order') }}">
+        <input type="hidden" name="filename" value="{{ file_info.filename }}">
+        
+        <!-- Print Specifications -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Print Specifications</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="pages" class="form-label">Number of Pages</label>
+                        <input type="number" class="form-control" id="pages" name="pages" min="1" max="500" required value="{{ file_info.page_count }}">
+                        <div class="form-text">Automatically detected from your document</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="copies" class="form-label">Number of Copies</label>
+                        <input type="number" class="form-control" id="copies" name="copies" min="1" max="100" required value="1">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="paper_type" class="form-label">Paper Type</label>
+                        <select class="form-select" id="paper_type" name="paper_type" required>
+                            <option value="Plain Paper">Plain Paper</option>
+                            <option value="Art Paper">Art Paper</option>
+                            <option value="Art Board">Art Board</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="paper_size" class="form-label">Paper Size</label>
+                        <select class="form-select" id="paper_size" name="paper_size" required>
+                            <option value="A4">A4</option>
+                            <option value="A3">A3</option>
+                            <option value="A5">A5</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="color" name="color" value="true">
+                            <label class="form-check-label" for="color">
+                                Color Printing (2.5x cost)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="priority" class="form-label">Priority Level</label>
+                        <select class="form-select" id="priority" name="priority" required>
+                            <option value="Normal">Normal (1x)</option>
+                            <option value="High">High (1.5x)</option>
+                            <option value="Rush">Rush (2x)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment Method -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Payment Method</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="payment_method" class="form-label">Select Payment Method</label>
+                    <select class="form-select" id="payment_method" name="payment_method" required>
+                        <option value="Mobile Money">Mobile Money</option>
+                        <option value="Pay on Delivery">Cash on Delivery</option>
+                    </select>
+                </div>
+                
+                <!-- Mobile Money Payment Details -->
+                <div id="mobile_payment_section">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="mobile_provider" class="form-label">Mobile Provider</label>
+                            <select class="form-select" id="mobile_provider" name="mobile_provider">
+                                <option value="MTN">MTN</option>
+                                <option value="Airtel">Airtel</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mobile_number" class="form-label">Mobile Number</label>
+                            <input type="tel" class="form-control" id="mobile_number" name="mobile_number" placeholder="e.g., 0771234567">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cash on Delivery Details -->
+                <div id="delivery_address_section" style="display: none;">
+                    <div class="mb-3">
+                        <label for="delivery_address" class="form-label">Delivery Address</label>
+                        <textarea class="form-control" id="delivery_address" name="delivery_address" rows="3" placeholder="Enter complete delivery address"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="delivery_contact" class="form-label">Contact Phone Number</label>
+                        <input type="tel" class="form-control" id="delivery_contact" name="delivery_contact" placeholder="Phone number for delivery updates">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional Notes -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Additional Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="user_notes" class="form-label">Special Instructions (Optional)</label>
+                    <textarea class="form-control" id="user_notes" name="user_notes" rows="3" placeholder="Any special instructions for your order"></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">Submit Order</button>
+            <a href="{{ url_for('upload_file') }}" class="btn btn-secondary btn-lg">Upload Different File</a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-lg">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<!-- JavaScript for real-time price calculation and payment method toggle -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Payment method toggle functionality
+    const paymentMethodSelect = document.getElementById('payment_method');
+    const mobilePaymentSection = document.getElementById('mobile_payment_section');
+    const deliveryAddressSection = document.getElementById('delivery_address_section');
+    
+    function togglePaymentSections() {
+        if (paymentMethodSelect.value === 'Mobile Money') {
+            mobilePaymentSection.style.display = 'block';
+            deliveryAddressSection.style.display = 'none';
+        } else {
+            mobilePaymentSection.style.display = 'none';
+            deliveryAddressSection.style.display = 'block';
+        }
+    }
+    
+    paymentMethodSelect.addEventListener('change', togglePaymentSections);
+    togglePaymentSections(); // Initialize on page load
+    
+    // Price calculation functionality
+    const priceFactors = ['pages', 'copies', 'paper_type', 'paper_size', 'priority', 'color'];
+    const formElements = {};
+    
+    // Get all form elements
+    priceFactors.forEach(factor => {
+        const element = document.querySelector(`[name="${factor}"]`);
+        if (element) {
+            formElements[factor] = element;
+            element.addEventListener('change', calculatePrice);
+            // For text inputs, use input event for immediate feedback
+            if (element.type === 'text' || element.type === 'number') {
+                element.addEventListener('input', calculatePrice);
+                // Add validation styling
+                element.addEventListener('input', validateField);
+            }
+        }
+    });
+    
+    // Validate individual field
+    function validateField(e) {
+        const field = e.target;
+        if (field.name === 'pages') {
+            const value = parseInt(field.value);
+            if (isNaN(value) || value < 1 || value > 500) {
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        } else if (field.name === 'copies') {
+            const value = parseInt(field.value);
+            if (isNaN(value) || value < 1 || value > 100) {
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        }
+    }
+    
+    // Validate all inputs
+    function validateInputs() {
+        const pages = parseInt(formElements.pages.value);
+        const copies = parseInt(formElements.copies.value);
+        
+        // Validate pages
+        if (isNaN(pages) || pages < 1 || pages > 500) {
+            formElements.pages.classList.add('is-invalid');
+            return false;
+        } else {
+            formElements.pages.classList.remove('is-invalid');
+        }
+        
+        // Validate copies
+        if (isNaN(copies) || copies < 1 || copies > 100) {
+            formElements.copies.classList.add('is-invalid');
+            return false;
+        } else {
+            formElements.copies.classList.remove('is-invalid');
+        }
+        
+        return true;
+    }
+    
+    function calculatePrice() {
+        if (!validateInputs()) {
+            document.getElementById('estimated-price').textContent = 'UGX 0';
+            document.getElementById('price-loading').classList.add('d-none');
+            return;
+        }
+        
+        // Show loading indicator
+        document.getElementById('price-loading').classList.remove('d-none');
+        
+        // Collect form values
+        const formData = {};
+        priceFactors.forEach(factor => {
+            if (formElements[factor]) {
+                if (formElements[factor].type === 'checkbox') {
+                    formData[factor] = formElements[factor].checked;
+                } else {
+                    formData[factor] = formElements[factor].value;
+                }
+            }
+        });
+        
+        // Make API request
+        fetch('{{ url_for("calculate_price_api") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('estimated-price').textContent = data.formatted_price;
+            } else {
+                console.error('Error calculating price:', data.error);
+                document.getElementById('estimated-price').textContent = 'UGX 0';
+            }
+            document.getElementById('price-loading').classList.add('d-none');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('estimated-price').textContent = 'UGX 0';
+            document.getElementById('price-loading').classList.add('d-none');
+        });
+    }
+    
+    // Initial calculation
+    calculatePrice();
+});
+</script>
+{% endblock %}

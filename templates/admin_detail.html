@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Details - {{ admin.username }} - PrintCorps{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Back button -->
+    <div class="mb-3">
+        <a href="{{ url_for('admin_users') }}" class="btn btn-secondary">
+            &larr; Back to Users
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Admin Information -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Admin Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Admin ID:</strong> {{ admin.id }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Username:</strong> {{ admin.username }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Full Name:</strong> {{ admin.full_name if admin.full_name else 'Not provided' }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Email:</strong> {{ admin.email if admin.email else 'Not provided' }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Phone:</strong> {{ admin.phone_number if admin.phone_number else 'Not provided' }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Account Type:</strong> 
+                        {% if admin.is_superadmin %}Super Admin
+                        {% else %}Admin
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Member Since:</strong> {{ admin.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Last Password Change:</strong> 
+                        {% if admin.password_changed_at %}
+                            {{ admin.password_changed_at.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                            Never changed
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <strong>One-Time Password:</strong> 
+                        {{ 'Yes' if admin.is_one_time_password else 'No' }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Statistics -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Performance Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">Total Assigned Orders: {{ performance_stats.total_assigned }}</div>
+                    <div class="mb-2">Total Processed Orders: {{ performance_stats.total_processed }}</div>
+                    <div class="mb-2">Completed Orders: {{ performance_stats.completed_orders }}</div>
+                    <div class="mb-2">Pending Orders: {{ performance_stats.pending_orders }}</div>
+                    <div class="mb-2">Processing Orders: {{ performance_stats.processing_orders }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Activity -->
+        <div class="col-md-8">
+            <!-- Currently Assigned Orders -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Currently Assigned Orders ({{ assigned_orders|length }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if assigned_orders %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>File</th>
+                                    <th>Assigned Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in assigned_orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td>{{ order.customer.username }}</td>
+                                    <td>{{ order.original_filename|truncate(20) }}</td>
+                                    <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if order.status == 'Completed' %}success
+                                        {% elif order.status == 'Processing' %}info
+                                        {% elif order.status == 'Cancelled' %}danger
+                                        {% else %}warning{% endif %}">
+                                            {{ order.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('view_order', order_id=order.id) }}" class="btn btn-sm btn-info">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No orders currently assigned</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Processed Orders History -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Processed Orders History</h5>
+                </div>
+                <div class="card-body">
+                    {% if processed_orders %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>File</th>
+                                    <th>Processed Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in processed_orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td>{{ order.customer.username }}</td>
+                                    <td>{{ order.original_filename|truncate(20) }}</td>
+                                    <td>{{ order.processing_completed_at.strftime('%Y-%m-%d') if order.processing_completed_at else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if order.status == 'Completed' %}success
+                                        {% elif order.status == 'Processing' %}info
+                                        {% elif order.status == 'Cancelled' %}danger
+                                        {% else %}warning{% endif %}">
+                                            {{ order.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('view_order', order_id=order.id) }}" class="btn btn-sm btn-info">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No orders processed yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

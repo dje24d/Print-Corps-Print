@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}Super Admin Dashboard - Print Corps{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Super Admin Dashboard Header with Welcome Message -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Super Admin Dashboard - Welcome, {{ current_user.username }}!</h2>
+        <a href="{{ url_for('profile') }}" class="btn btn-outline-primary">My Profile</a>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mt-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <h5>Total Orders</h5>
+                    <h2>{{ stats.total_orders }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <h5>Total Users</h5>
+                    <h2>{{ stats.total_users }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white mb-4">
+                <div class="card-body">
+                    <h5>Total Admins</h5>
+                    <h2>{{ stats.total_admins }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <h5>Pending Orders</h5>
+                    <h2>{{ stats.pending_orders }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue Section with Cancelled Orders -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-dark text-white mb-4">
+                <div class="card-body">
+                    <h5>Today's Revenue</h5>
+                    <h2>{{ format_currency(stats.revenue_today) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-secondary text-white mb-4">
+                <div class="card-body">
+                    <h5>Monthly Revenue</h5>
+                    <h2>{{ format_currency(stats.revenue_month) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-danger text-white mb-4">
+                <div class="card-body">
+                    <h5>Processing Orders</h5>
+                    <h2>{{ stats.processing_orders }}</h2>
+                </div>
+            </div>
+        </div>
+        <!-- Add cancelled orders card -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-danger text-white mb-4">
+                <div class="card-body">
+                    <h5>Cancelled Orders</h5>
+                    <h2>{{ stats.cancelled_orders }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Quick Actions</h4>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('admin_orders') }}" class="btn btn-primary me-2">View All Orders</a>
+                    <a href="{{ url_for('admin_users') }}" class="btn btn-secondary me-2">Manage Users</a>
+                    <a href="{{ url_for('create_admin') }}" class="btn btn-success me-2">Create Admin</a>
+                    <a href="{{ url_for('superadmin_dashboard') }}" class="btn btn-info">Refresh</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Users -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Top Users by Spending</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Orders</th>
+                                    <th>Total Spent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in stats.top_users %}
+                                <tr>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.order_count }}</td>
+                                    <td>{{ format_currency(user.total_spent) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center">No data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Performance (Simplified) -->
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Admin Performance</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Admin</th>
+                                    <th>Total Orders</th>
+                                    <th>Completed</th>
+                                    <th>Avg Time (days)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for admin in stats.admin_performance %}
+                                <tr>
+                                    <td>{{ admin.username }}</td>
+                                    <td>{{ admin.total_orders }}</td>
+                                    <td>{{ admin.completed_orders }}</td>
+                                    <td>{{ "%.1f"|format(admin.avg_completion_time or 0) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Performance (Detailed) with Cancelled Orders -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Admin Performance - Detailed</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <!-- Update admin performance table to include cancelled orders -->
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Admin</th>
+                                    <th>Total Orders</th>
+                                    <th>Pending</th>
+                                    <th>Processing</th>
+                                    <th>Completed</th>
+                                    <th>Cancelled</th>
+                                    <th>Avg Time (days)</th>
+                                    <th>Completion Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for admin in stats.admin_performance %}
+                                <tr>
+                                    <td>{{ admin.username }}</td>
+                                    <td>{{ admin.total_orders }}</td>
+                                    <td>{{ admin.pending_orders }}</td>
+                                    <td>{{ admin.processing_orders }}</td>
+                                    <td>{{ admin.completed_orders }}</td>
+                                    <td>{{ admin.cancelled_orders }}</td>
+                                    <td>{{ "%.1f"|format(admin.avg_completion_days or 0) }}</td>
+                                    <td>
+                                        {% if admin.total_orders > 0 %}
+                                        {{ "%.1f"|format((admin.completed_orders / admin.total_orders * 100)) }}%
+                                        {% else %}
+                                        0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center">No admin performance data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Recent Orders</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>File</th>
+                                    <th>Status</th>
+                                    <th>Price</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in stats.recent_orders %}
+                                <tr>
+                                    <td><a href="{{ url_for('view_order', order_id=order.id) }}">#{{ order.id }}</a></td>
+                                    <td>{{ order.customer.username if order.customer else 'N/A' }}</td>
+                                    <td>{{ order.original_filename|truncate(20) if order.original_filename else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if order.status == 'Completed' %}success{% elif order.status == 'Processing' %}warning{% elif order.status == 'Pending' %}secondary{% else %}danger{% endif %}">
+                                            {{ order.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ format_currency(order.price) if order.price else 'N/A' }}</td>
+                                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else 'N/A' }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No recent orders</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Styles for the super admin dashboard header */
+.d-flex {
+    display: flex;
+}
+
+.justify-content-between {
+    justify-content: space-between;
+}
+
+.align-items-center {
+    align-items: center;
+}
+
+.mb-4 {
+    margin-bottom: 1.5rem;
+}
+
+.btn-outline-primary {
+    border: 1px solid #4a90e2;
+    color: #4a90e2;
+    background: transparent;
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: inline-block;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4a90e2;
+    color: white;
+}
+
+/* Adjust spacing for the dashboard */
+.container-fluid {
+    padding: 20px;
+}
+
+/* Ensure proper spacing between header and content */
+.mt-4 {
+    margin-top: 1.5rem !important;
+}
+</style>
+{% endblock %}

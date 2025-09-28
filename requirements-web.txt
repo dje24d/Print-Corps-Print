@@ -1,4 +1,6 @@
 python-dotenv==1.0.1
+Flask-Migrate==4.0.5
+
 
 # Web framework
 Flask==3.1.1

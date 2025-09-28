@@ -3,9 +3,10 @@ services:
     name: my-flask-app
     env: python
     plan: free
-    buildCommand: "pip install --upgrade pip && pip install -r requirements-web.txt"
-    startCommand: "gunicorn app:app"
-    autoDeploy: true
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements-web.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:10000
     envVars:
       - key: PYTHON_VERSION
         value: 3.11

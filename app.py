@@ -273,16 +273,20 @@ class PaymentLog(db.Model):
     completed_at = db.Column(db.DateTime)
     status = db.Column(db.String(20), default='Pending')
 
-def create_app():
+def create_app(config_class=Config):
     app = Flask(__name__)
-    app.config.from_object(Config)
+    app.config.from_object(config_class)
 
+    # Initialize extensions (remove migrate)
     db.init_app(app)
+    # migrate.init_app(app, db)  # Remove this line
     login_manager.init_app(app)
     login_manager.login_view = 'login'
 
+    # Add your custom filters
     app.jinja_env.filters['format_currency'] = format_currency
 
+    # Create upload folder
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     # Add spatialite support for SQLite
@@ -291,9 +295,9 @@ def create_app():
         def connect(dbapi_conn, connection_record):
             enable_spatialite(dbapi_conn, connection_record)
 
-    register_routes(app)
-
+    # Register routes and create initial admin within app context
     with app.app_context():
+        register_routes(app)
         db.create_all()
         create_initial_admin(app)
     

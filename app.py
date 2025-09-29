@@ -1817,5 +1817,5 @@ def load_user(user_id):
 # Create app instance - THIS IS CRITICAL FOR GUNICORN
 app = create_app()
 
-if __name__ == "__main__":
-    app.run()
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=False)

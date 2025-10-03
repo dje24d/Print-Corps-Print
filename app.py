@@ -277,6 +277,13 @@ def create_app(config_class=Config):
     # Get the base directory path
     basedir = os.path.abspath(os.path.dirname(__file__))
     template_dir = os.path.join(basedir, 'templates')
+
+    print(f"Base directory: {basedir}")
+    print(f"Template directory: {template_dir}")
+    print(f"Template directory exists: {os.path.exists(template_dir)}")
+    
+    if os.path.exists(template_dir):
+        print(f"Files in template directory: {os.listdir(template_dir)}")
     
     # Create Flask app with explicit template folder
     app = Flask(__name__, 
@@ -1830,4 +1837,5 @@ app = create_app()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
+
 

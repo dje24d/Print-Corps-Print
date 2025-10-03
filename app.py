@@ -274,12 +274,19 @@ class PaymentLog(db.Model):
     status = db.Column(db.String(20), default='Pending')
 
 def create_app(config_class=Config):
-    app = Flask(__name__)
+    # Get the base directory path
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    template_dir = os.path.join(basedir, 'templates')
+    
+    # Create Flask app with explicit template folder
+    app = Flask(__name__, 
+                template_folder=template_dir,
+                static_folder=os.path.join(basedir, 'static'))
+    
     app.config.from_object(config_class)
 
-    # Initialize extensions (remove migrate)
+    # Initialize extensions
     db.init_app(app)
-    # migrate.init_app(app, db)  # Remove this line
     login_manager.init_app(app)
     login_manager.login_view = 'login'
 
@@ -1823,3 +1830,4 @@ app = create_app()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
+
